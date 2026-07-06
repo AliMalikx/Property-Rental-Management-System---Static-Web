@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reports — PRMS</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body class="page">
+
+<header class="topbar">
+  <div class="logo">🏠 PRMS <span>Reports</span></div>
+  <div class="topbar-actions">
+    <a href="dashboard.html" class="btn btn-ghost btn-sm">← Dashboard</a>
+    <button class="btn btn-ghost btn-sm" id="logout-btn">Logout</button>
+  </div>
+</header>
+
+<main class="main">
+  <h1>Reports</h1>
+  <p class="subtitle">Consolidated view of all system data for monitoring and decision-making.</p>
+
+  <!-- SUMMARY STATS -->
+  <div class="stats-row" id="rpt-stats"></div>
+
+  <div class="tabs" style="margin-top:32px">
+    <button class="tab-btn active" data-tab="rpt-props">🏠 Properties</button>
+    <button class="tab-btn" data-tab="rpt-owners">👤 Owners</button>
+    <button class="tab-btn" data-tab="rpt-tenants">🧑‍💼 Tenants</button>
+    <button class="tab-btn" data-tab="rpt-payments">💳 Payments</button>
+  </div>
+
+  <!-- PROPERTIES -->
+  <div id="rpt-props" class="tab-pane active">
+    <div class="section-header"><h2>All Properties</h2><span id="rpt-prop-count" style="font-size:0.85rem;color:var(--text-muted)"></span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Prop ID</th><th>Owner ID</th><th>Title</th><th>Location</th><th>City</th><th>Beds</th><th>Rent (Rs)</th><th>Status</th></tr></thead>
+        <tbody id="rpt-prop-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- OWNERS -->
+  <div id="rpt-owners" class="tab-pane">
+    <div class="section-header"><h2>All Owners</h2><span id="rpt-own-count" style="font-size:0.85rem;color:var(--text-muted)"></span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Owner ID</th><th>Name</th><th>Phone</th><th>CNIC</th><th>Email</th><th>Address</th></tr></thead>
+        <tbody id="rpt-own-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TENANTS -->
+  <div id="rpt-tenants" class="tab-pane">
+    <div class="section-header"><h2>All Tenants</h2><span id="rpt-ten-count" style="font-size:0.85rem;color:var(--text-muted)"></span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tenant ID</th><th>Name</th><th>Phone</th><th>CNIC</th><th>Email</th><th>Address</th></tr></thead>
+        <tbody id="rpt-ten-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PAYMENTS -->
+  <div id="rpt-payments" class="tab-pane">
+    <div class="section-header">
+      <h2>Payment History</h2>
+      <span id="rpt-pay-total" style="color:var(--accent);font-weight:600;font-size:0.9rem"></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Pay ID</th><th>Tenant</th><th>Property</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
+        <tbody id="rpt-pay-body"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script src="app.js"></script>
+<script>
+  requireAuth();
+  initTabs();
+
+  const owners   = DB.get('owners') || [];
+  const props    = DB.get('properties') || [];
+  const tenants  = DB.get('tenants') || [];
+  const payments = DB.get('payments') || [];
+  const agrs     = DB.get('agreements') || [];
+
+  const available = props.filter(p => p.status === 'Available').length;
+  const rented    = props.filter(p => p.status === 'Rented').length;
+  const totalPaid = payments.reduce((s, p) => p.status === 'Paid' ? s + Number(p.amount) : s, 0);
+
+  document.getElementById('rpt-stats').innerHTML = [
+    { num: owners.length,   label: 'Owners' },
+    { num: props.length,    label: 'Properties' },
+    { num: tenants.length,  label: 'Tenants' },
+    { num: 'Rs ' + totalPaid.toLocaleString(), label: 'Total Collected' },
+  ].map(s => `<div class="stat-card"><div class="stat-num">${s.num}</div><div class="stat-label">${s.label}</div></div>`).join('');
+
+  // Props table
+  const propBadge = s => s === 'Available' ? 'badge-green' : s === 'Rented' ? 'badge-red' : 'badge-gold';
+  document.getElementById('rpt-prop-count').textContent = props.length + ' properties';
+  document.getElementById('rpt-prop-body').innerHTML = props.length
+    ? props.map(p => `<tr><td>${p.id}</td><td>${p.ownerId}</td><td>${p.title}</td><td>${p.location}</td><td>${p.city}</td><td>${p.bedrooms}</td><td>Rs ${Number(p.rent).toLocaleString()}</td><td><span class="badge ${propBadge(p.status)}">${p.status}</span></td></tr>`).join('')
+    : '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-faint)">No data</td></tr>';
+
+  // Owners table
+  document.getElementById('rpt-own-count').textContent = owners.length + ' owners';
+  document.getElementById('rpt-own-body').innerHTML = owners.length
+    ? owners.map(o => `<tr><td>${o.id}</td><td>${o.name}</td><td>${o.phone}</td><td>${o.cnic}</td><td>${o.email}</td><td>${o.address}</td></tr>`).join('')
+    : '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-faint)">No data</td></tr>';
+
+  // Tenants table
+  document.getElementById('rpt-ten-count').textContent = tenants.length + ' tenants';
+  document.getElementById('rpt-ten-body').innerHTML = tenants.length
+    ? tenants.map(t => `<tr><td>${t.id}</td><td>${t.name}</td><td>${t.phone}</td><td>${t.cnic}</td><td>${t.email}</td><td>${t.address}</td></tr>`).join('')
+    : '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-faint)">No data</td></tr>';
+
+  // Payments table
+  const payBadge = s => s === 'Paid' ? 'badge-green' : s === 'Pending' ? 'badge-gold' : 'badge-red';
+  const getTenName = id => (tenants.find(x => x.id === id) || {}).name || id;
+  const getPropTitle = id => (props.find(x => x.id === id) || {}).title || id;
+  document.getElementById('rpt-pay-total').textContent = 'Total: Rs ' + totalPaid.toLocaleString();
+  document.getElementById('rpt-pay-body').innerHTML = payments.length
+    ? payments.slice().reverse().map(p => `<tr><td>${p.id}</td><td>${getTenName(p.tenantId)}</td><td>${getPropTitle(p.propertyId)}</td><td>Rs ${Number(p.amount).toLocaleString()}</td><td>${p.date}</td><td>${p.method}</td><td><span class="badge ${payBadge(p.status)}">${p.status}</span></td></tr>`).join('')
+    : '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-faint)">No data</td></tr>';
+</script>
+</body>
+</html>

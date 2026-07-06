@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — PRMS</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body class="page">
+
+<header class="topbar">
+  <div class="logo">🏠 PRMS <span>Property Rental Management System</span></div>
+  <div class="topbar-actions">
+    <span id="admin-badge" style="font-size:0.82rem;color:var(--text-muted)">👤 Admin</span>
+    <button class="btn btn-ghost btn-sm" id="logout-btn">Logout</button>
+  </div>
+</header>
+
+<main class="main">
+  <h1>Main Dashboard</h1>
+  <p class="subtitle">Welcome back! Manage all rental operations from one place.</p>
+
+  <div class="stats-row" id="stats-row"></div>
+
+  <h2>Modules</h2>
+  <div class="module-grid">
+    <a href="owners.html" class="module-card">
+      <div class="icon">👤</div>
+      <h3>Manage Owners</h3>
+      <p>Add, view, edit & delete property owners.</p>
+    </a>
+    <a href="properties.html" class="module-card">
+      <div class="icon">🏠</div>
+      <h3>Manage Properties</h3>
+      <p>Register and manage all rental properties.</p>
+    </a>
+    <a href="tenants.html" class="module-card">
+      <div class="icon">🧑‍💼</div>
+      <h3>Manage Tenants</h3>
+      <p>Track tenant profiles and contact info.</p>
+    </a>
+    <a href="payments.html" class="module-card">
+      <div class="icon">💳</div>
+      <h3>Manage Payments</h3>
+      <p>Record and view rental payment transactions.</p>
+    </a>
+    <a href="agreements.html" class="module-card">
+      <div class="icon">📄</div>
+      <h3>Rental Agreements</h3>
+      <p>Manage legal contracts between owners and tenants.</p>
+    </a>
+    <a href="reports.html" class="module-card">
+      <div class="icon">📊</div>
+      <h3>Reports</h3>
+      <p>View consolidated data and activity reports.</p>
+    </a>
+  </div>
+</main>
+
+<script src="app.js"></script>
+<script>
+  requireAuth();
+
+  const owners     = DB.get('owners')     || [];
+  const properties = DB.get('properties') || [];
+  const tenants    = DB.get('tenants')    || [];
+  const payments   = DB.get('payments')   || [];
+
+  const stats = [
+    { num: owners.length,               label: 'Total Owners' },
+    { num: properties.length,           label: 'Properties' },
+    { num: tenants.length,              label: 'Tenants' },
+    { num: 'Rs ' + payments.reduce((s,p) => s + Number(p.amount), 0).toLocaleString(), label: 'Total Payments' },
+  ];
+
+  document.getElementById('stats-row').innerHTML = stats.map(s => `
+    <div class="stat-card">
+      <div class="stat-num">${s.num}</div>
+      <div class="stat-label">${s.label}</div>
+    </div>`).join('');
+</script>
+</body>
+</html>

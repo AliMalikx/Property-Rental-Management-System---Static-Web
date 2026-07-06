@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Properties — PRMS</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body class="page">
+
+<header class="topbar">
+  <div class="logo">🏠 PRMS <span>Manage Properties</span></div>
+  <div class="topbar-actions">
+    <a href="dashboard.html" class="btn btn-ghost btn-sm">← Dashboard</a>
+    <button class="btn btn-ghost btn-sm" id="logout-btn">Logout</button>
+  </div>
+</header>
+
+<main class="main">
+  <h1>Properties</h1>
+  <p class="subtitle">Add, view, edit and delete property records.</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="tab-add">➕ Add Property</button>
+    <button class="tab-btn" data-tab="tab-view">📋 View Properties</button>
+    <button class="tab-btn" data-tab="tab-edit">✏️ Edit Property</button>
+    <button class="tab-btn" data-tab="tab-delete">🗑️ Delete Property</button>
+  </div>
+
+  <!-- ADD -->
+  <div id="tab-add" class="tab-pane active">
+    <div class="card">
+      <h2>Add New Property</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Property ID</label>
+          <input type="text" id="add-prop-id" readonly placeholder="Auto-generated"/>
+        </div>
+        <div class="form-group">
+          <label>Owner ID</label>
+          <select id="add-prop-owner"></select>
+        </div>
+        <div class="form-group">
+          <label>Property Title</label>
+          <input type="text" id="add-prop-title" placeholder="e.g. Green Valley Apartment"/>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" id="add-prop-location" placeholder="e.g. Blue Area"/>
+        </div>
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" id="add-prop-city" placeholder="e.g. Islamabad"/>
+        </div>
+        <div class="form-group">
+          <label>Bedrooms</label>
+          <input type="number" id="add-prop-beds" min="0" placeholder="3"/>
+        </div>
+        <div class="form-group">
+          <label>Monthly Rent (Rs)</label>
+          <input type="number" id="add-prop-rent" min="0" placeholder="45000"/>
+        </div>
+        <div class="form-group">
+          <label>Availability Status</label>
+          <select id="add-prop-status">
+            <option value="Available">Available</option>
+            <option value="Rented">Rented</option>
+            <option value="Under Maintenance">Under Maintenance</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="add-prop-btn">Add Property</button>
+          <button class="btn btn-ghost" id="add-prop-reset">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW -->
+  <div id="tab-view" class="tab-pane">
+    <div class="section-header">
+      <h2>All Properties</h2>
+      <span id="prop-count" style="font-size:0.85rem;color:var(--text-muted)"></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Prop ID</th><th>Owner ID</th><th>Title</th><th>Location</th>
+            <th>City</th><th>Beds</th><th>Rent (Rs)</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="prop-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- EDIT -->
+  <div id="tab-edit" class="tab-pane">
+    <div class="card">
+      <h2>Edit Property</h2>
+      <div class="form-group" style="margin-bottom:20px">
+        <label>Select Property ID</label>
+        <select id="edit-prop-select"></select>
+      </div>
+      <div class="form-grid" id="edit-prop-fields" style="display:none">
+        <div class="form-group">
+          <label>Owner ID</label>
+          <select id="edit-prop-owner"></select>
+        </div>
+        <div class="form-group">
+          <label>Property Title</label>
+          <input type="text" id="edit-prop-title"/>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" id="edit-prop-location"/>
+        </div>
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" id="edit-prop-city"/>
+        </div>
+        <div class="form-group">
+          <label>Bedrooms</label>
+          <input type="number" id="edit-prop-beds"/>
+        </div>
+        <div class="form-group">
+          <label>Monthly Rent (Rs)</label>
+          <input type="number" id="edit-prop-rent"/>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="edit-prop-status">
+            <option>Available</option>
+            <option>Rented</option>
+            <option>Under Maintenance</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="save-prop-btn">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE -->
+  <div id="tab-delete" class="tab-pane">
+    <div class="card" style="max-width:480px">
+      <h2>Delete Property</h2>
+      <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:20px">Select a property to permanently remove it from the system.</p>
+      <div class="form-group" style="margin-bottom:20px">
+        <label>Select Property ID</label>
+        <select id="del-prop-select"></select>
+      </div>
+      <div id="del-prop-preview" style="display:none;margin-bottom:20px;padding:14px;background:var(--surface2);border-radius:8px;font-size:0.88rem;color:var(--text-muted)"></div>
+      <button class="btn btn-danger" id="del-prop-btn">Delete Property</button>
+    </div>
+  </div>
+</main>
+
+<script src="app.js"></script>
+<script>
+  requireAuth();
+
+  // ---- helpers ----
+  function getOwnerOptions(selectedId = '') {
+    const owners = DB.get('owners') || [];
+    return owners.map(o => `<option value="${o.id}" ${o.id===selectedId?'selected':''}>${o.id} — ${o.name}</option>`).join('');
+  }
+
+  function renderTable() {
+    const props = DB.get('properties') || [];
+    document.getElementById('prop-count').textContent = props.length + ' record(s)';
+    const badge = s => s === 'Available' ? 'badge-green' : s === 'Rented' ? 'badge-red' : 'badge-gold';
+    document.getElementById('prop-table-body').innerHTML = props.length
+      ? props.map(p => `<tr>
+          <td>${p.id}</td><td>${p.ownerId}</td><td>${p.title}</td><td>${p.location}</td>
+          <td>${p.city}</td><td>${p.bedrooms}</td><td>Rs ${Number(p.rent).toLocaleString()}</td>
+          <td><span class="badge ${badge(p.status)}">${p.status}</span></td>
+        </tr>`).join('')
+      : '<tr><td colspan="8"><div class="empty-state"><div class="icon">🏠</div><p>No properties added yet.</p></div></td></tr>';
+  }
+
+  function populateSelects() {
+    const props = DB.get('properties') || [];
+    const options = props.map(p => `<option value="${p.id}">${p.id} — ${p.title}</option>`).join('');
+    document.getElementById('edit-prop-select').innerHTML = '<option value="">-- Select --</option>' + options;
+    document.getElementById('del-prop-select').innerHTML = '<option value="">-- Select --</option>' + options;
+    document.getElementById('add-prop-owner').innerHTML = getOwnerOptions();
+    document.getElementById('edit-prop-owner').innerHTML = getOwnerOptions();
+  }
+
+  function setAddId() {
+    const props = DB.get('properties') || [];
+    document.getElementById('add-prop-id').value = genId('PROP', props);
+  }
+
+  // ---- Init ----
+  initTabs();
+  renderTable();
+  populateSelects();
+  setAddId();
+
+  // ---- ADD ----
+  document.getElementById('add-prop-btn').addEventListener('click', () => {
+    const id       = document.getElementById('add-prop-id').value;
+    const ownerId  = document.getElementById('add-prop-owner').value;
+    const title    = document.getElementById('add-prop-title').value.trim();
+    const location = document.getElementById('add-prop-location').value.trim();
+    const city     = document.getElementById('add-prop-city').value.trim();
+    const bedrooms = document.getElementById('add-prop-beds').value;
+    const rent     = document.getElementById('add-prop-rent').value;
+    const status   = document.getElementById('add-prop-status').value;
+
+    if (!title || !location || !city || !bedrooms || !rent) {
+      showToast('Please fill all fields.', 'error'); return;
+    }
+
+    const props = DB.get('properties') || [];
+    props.push({ id, ownerId, title, location, city, bedrooms: +bedrooms, rent: +rent, status });
+    DB.set('properties', props);
+    showToast('Property added successfully!');
+    ['add-prop-title','add-prop-location','add-prop-city','add-prop-beds','add-prop-rent'].forEach(i => document.getElementById(i).value = '');
+    setAddId(); populateSelects(); renderTable();
+  });
+
+  document.getElementById('add-prop-reset').addEventListener('click', () => {
+    ['add-prop-title','add-prop-location','add-prop-city','add-prop-beds','add-prop-rent'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('add-prop-status').value = 'Available';
+  });
+
+  // ---- EDIT ----
+  document.getElementById('edit-prop-select').addEventListener('change', function() {
+    const id = this.value;
+    const fields = document.getElementById('edit-prop-fields');
+    if (!id) { fields.style.display = 'none'; return; }
+    const props = DB.get('properties') || [];
+    const p = props.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('edit-prop-owner').innerHTML = getOwnerOptions(p.ownerId);
+    document.getElementById('edit-prop-title').value    = p.title;
+    document.getElementById('edit-prop-location').value = p.location;
+    document.getElementById('edit-prop-city').value     = p.city;
+    document.getElementById('edit-prop-beds').value     = p.bedrooms;
+    document.getElementById('edit-prop-rent').value     = p.rent;
+    document.getElementById('edit-prop-status').value   = p.status;
+    fields.style.display = 'grid';
+  });
+
+  document.getElementById('save-prop-btn').addEventListener('click', () => {
+    const id = document.getElementById('edit-prop-select').value;
+    const props = DB.get('properties') || [];
+    const idx = props.findIndex(x => x.id === id);
+    if (idx < 0) return;
+    props[idx] = {
+      ...props[idx],
+      ownerId:  document.getElementById('edit-prop-owner').value,
+      title:    document.getElementById('edit-prop-title').value.trim(),
+      location: document.getElementById('edit-prop-location').value.trim(),
+      city:     document.getElementById('edit-prop-city').value.trim(),
+      bedrooms: +document.getElementById('edit-prop-beds').value,
+      rent:     +document.getElementById('edit-prop-rent').value,
+      status:   document.getElementById('edit-prop-status').value,
+    };
+    DB.set('properties', props);
+    showToast('Property updated!');
+    renderTable(); populateSelects();
+    document.getElementById('edit-prop-fields').style.display = 'none';
+    document.getElementById('edit-prop-select').value = '';
+  });
+
+  // ---- DELETE ----
+  document.getElementById('del-prop-select').addEventListener('change', function() {
+    const id = this.value;
+    const preview = document.getElementById('del-prop-preview');
+    if (!id) { preview.style.display = 'none'; return; }
+    const props = DB.get('properties') || [];
+    const p = props.find(x => x.id === id);
+    if (!p) return;
+    preview.innerHTML = `<b>${p.title}</b><br>Location: ${p.location}, ${p.city}<br>Rent: Rs ${Number(p.rent).toLocaleString()}/mo`;
+    preview.style.display = 'block';
+  });
+
+  document.getElementById('del-prop-btn').addEventListener('click', () => {
+    const id = document.getElementById('del-prop-select').value;
+    if (!id) { showToast('Select a property first.', 'error'); return; }
+    confirmModal('Delete Property', `Are you sure you want to delete property ${id}? This action cannot be undone.`, () => {
+      let props = DB.get('properties') || [];
+      props = props.filter(x => x.id !== id);
+      DB.set('properties', props);
+      showToast('Property deleted.');
+      populateSelects(); renderTable();
+      document.getElementById('del-prop-preview').style.display = 'none';
+    });
+  });
+</script>
+</body>
+</html>

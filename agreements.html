@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rental Agreements — PRMS</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body class="page">
+
+<header class="topbar">
+  <div class="logo">🏠 PRMS <span>Rental Agreements</span></div>
+  <div class="topbar-actions">
+    <a href="dashboard.html" class="btn btn-ghost btn-sm">← Dashboard</a>
+    <button class="btn btn-ghost btn-sm" id="logout-btn">Logout</button>
+  </div>
+</header>
+
+<main class="main">
+  <h1>Rental Agreements</h1>
+  <p class="subtitle">Create and view legal contracts between owners and tenants.</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="tab-add">➕ New Agreement</button>
+    <button class="tab-btn" data-tab="tab-view">📋 View Agreements</button>
+  </div>
+
+  <!-- ADD -->
+  <div id="tab-add" class="tab-pane active">
+    <div class="card">
+      <h2>Create New Agreement</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Agreement ID</label>
+          <input type="text" id="agr-id" readonly/>
+        </div>
+        <div class="form-group">
+          <label>Property</label>
+          <select id="agr-property"></select>
+        </div>
+        <div class="form-group">
+          <label>Owner</label>
+          <select id="agr-owner"></select>
+        </div>
+        <div class="form-group">
+          <label>Tenant</label>
+          <select id="agr-tenant"></select>
+        </div>
+        <div class="form-group">
+          <label>Start Date</label>
+          <input type="date" id="agr-start"/>
+        </div>
+        <div class="form-group">
+          <label>End Date</label>
+          <input type="date" id="agr-end"/>
+        </div>
+        <div class="form-group">
+          <label>Monthly Rent (Rs)</label>
+          <input type="number" id="agr-rent" placeholder="0"/>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="agr-status">
+            <option>Active</option>
+            <option>Expired</option>
+            <option>Terminated</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="add-agr-btn">Create Agreement</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW -->
+  <div id="tab-view" class="tab-pane">
+    <div class="section-header">
+      <h2>All Agreements</h2>
+      <span id="agr-count" style="font-size:0.85rem;color:var(--text-muted)"></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Agr ID</th><th>Property</th><th>Owner</th><th>Tenant</th><th>Start</th><th>End</th><th>Rent (Rs)</th><th>Status</th></tr>
+        </thead>
+        <tbody id="agr-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script src="app.js"></script>
+<script>
+  requireAuth();
+
+  function populate() {
+    const agrs  = DB.get('agreements') || [];
+    const props = DB.get('properties') || [];
+    const own   = DB.get('owners') || [];
+    const ten   = DB.get('tenants') || [];
+
+    document.getElementById('agr-id').value = genId('AGR', agrs);
+    document.getElementById('agr-property').innerHTML = props.map(p => `<option value="${p.id}">${p.id} — ${p.title}</option>`).join('');
+    document.getElementById('agr-owner').innerHTML    = own.map(o => `<option value="${o.id}">${o.id} — ${o.name}</option>`).join('');
+    document.getElementById('agr-tenant').innerHTML   = ten.map(t => `<option value="${t.id}">${t.id} — ${t.name}</option>`).join('');
+  }
+
+  function renderTable() {
+    const agrs  = DB.get('agreements') || [];
+    const props = DB.get('properties') || [];
+    const own   = DB.get('owners') || [];
+    const ten   = DB.get('tenants') || [];
+    document.getElementById('agr-count').textContent = agrs.length + ' agreement(s)';
+    const badge = s => s === 'Active' ? 'badge-green' : s === 'Expired' ? 'badge-red' : 'badge-gold';
+    const getName = (list, id) => (list.find(x => x.id === id) || {}).name || id;
+    const getTitle = id => (props.find(x => x.id === id) || {}).title || id;
+
+    document.getElementById('agr-table-body').innerHTML = agrs.length
+      ? agrs.map(a => `<tr>
+          <td>${a.id}</td>
+          <td>${getTitle(a.propertyId)}</td>
+          <td>${getName(own, a.ownerId)}</td>
+          <td>${getName(ten, a.tenantId)}</td>
+          <td>${a.startDate}</td><td>${a.endDate}</td>
+          <td>Rs ${Number(a.monthlyRent).toLocaleString()}</td>
+          <td><span class="badge ${badge(a.status)}">${a.status}</span></td>
+        </tr>`).join('')
+      : '<tr><td colspan="8"><div class="empty-state"><div class="icon">📄</div><p>No agreements found.</p></div></td></tr>';
+  }
+
+  initTabs();
+  populate();
+  renderTable();
+
+  document.getElementById('add-agr-btn').addEventListener('click', () => {
+    const id         = document.getElementById('agr-id').value;
+    const propertyId = document.getElementById('agr-property').value;
+    const ownerId    = document.getElementById('agr-owner').value;
+    const tenantId   = document.getElementById('agr-tenant').value;
+    const startDate  = document.getElementById('agr-start').value;
+    const endDate    = document.getElementById('agr-end').value;
+    const monthlyRent= document.getElementById('agr-rent').value;
+    const status     = document.getElementById('agr-status').value;
+
+    if (!startDate || !endDate || !monthlyRent) { showToast('Fill all fields.', 'error'); return; }
+    if (new Date(endDate) <= new Date(startDate)) { showToast('End date must be after start date.', 'error'); return; }
+
+    const agrs = DB.get('agreements') || [];
+    agrs.push({ id, propertyId, ownerId, tenantId, startDate, endDate, monthlyRent: +monthlyRent, status });
+    DB.set('agreements', agrs);
+
+    // Mark property as Rented
+    const props = DB.get('properties') || [];
+    const pi = props.findIndex(x => x.id === propertyId);
+    if (pi >= 0) { props[pi].status = 'Rented'; DB.set('properties', props); }
+
+    showToast('Agreement created!');
+    populate(); renderTable();
+  });
+</script>
+</body>
+</html>

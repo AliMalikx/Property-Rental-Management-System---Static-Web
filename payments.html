@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payments — PRMS</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body class="page">
+
+<header class="topbar">
+  <div class="logo">🏠 PRMS <span>Manage Payments</span></div>
+  <div class="topbar-actions">
+    <a href="dashboard.html" class="btn btn-ghost btn-sm">← Dashboard</a>
+    <button class="btn btn-ghost btn-sm" id="logout-btn">Logout</button>
+  </div>
+</header>
+
+<main class="main">
+  <h1>Payments</h1>
+  <p class="subtitle">Record and track rental payment transactions.</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="tab-make">💳 Make Payment</button>
+    <button class="tab-btn" data-tab="tab-view">📋 View Payments</button>
+  </div>
+
+  <!-- MAKE PAYMENT -->
+  <div id="tab-make" class="tab-pane active">
+    <div class="card" style="max-width:640px">
+      <h2>Record New Payment</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Payment ID</label>
+          <input type="text" id="pay-id" readonly/>
+        </div>
+        <div class="form-group">
+          <label>Tenant</label>
+          <select id="pay-tenant"></select>
+        </div>
+        <div class="form-group">
+          <label>Property</label>
+          <select id="pay-property"></select>
+        </div>
+        <div class="form-group">
+          <label>Amount (Rs)</label>
+          <input type="number" id="pay-amount" placeholder="0"/>
+        </div>
+        <div class="form-group">
+          <label>Payment Date</label>
+          <input type="date" id="pay-date"/>
+        </div>
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select id="pay-method">
+            <option>Cash</option>
+            <option>Bank Transfer</option>
+            <option>Card</option>
+            <option>Cheque</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="pay-status">
+            <option>Paid</option>
+            <option>Pending</option>
+            <option>Overdue</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="make-pay-btn">Record Payment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW -->
+  <div id="tab-view" class="tab-pane">
+    <div class="section-header">
+      <h2>Payment History</h2>
+      <div style="display:flex;gap:12px;align-items:center">
+        <span id="total-paid" style="font-size:0.85rem;color:var(--accent);font-weight:600"></span>
+        <span id="pay-count" style="font-size:0.85rem;color:var(--text-muted)"></span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Pay ID</th><th>Tenant</th><th>Property</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr>
+        </thead>
+        <tbody id="pay-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script src="app.js"></script>
+<script>
+  requireAuth();
+
+  function populate() {
+    const pays  = DB.get('payments') || [];
+    const ten   = DB.get('tenants') || [];
+    const props = DB.get('properties') || [];
+
+    document.getElementById('pay-id').value = genId('PAY', pays);
+    document.getElementById('pay-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('pay-tenant').innerHTML   = ten.map(t => `<option value="${t.id}">${t.id} — ${t.name}</option>`).join('');
+    document.getElementById('pay-property').innerHTML = props.map(p => `<option value="${p.id}">${p.id} — ${p.title}</option>`).join('');
+  }
+
+  function renderTable() {
+    const pays  = DB.get('payments') || [];
+    const ten   = DB.get('tenants') || [];
+    const props = DB.get('properties') || [];
+    const total = pays.reduce((s, p) => p.status === 'Paid' ? s + Number(p.amount) : s, 0);
+
+    document.getElementById('pay-count').textContent   = pays.length + ' record(s)';
+    document.getElementById('total-paid').textContent  = 'Total Collected: Rs ' + total.toLocaleString();
+
+    const badge = s => s === 'Paid' ? 'badge-green' : s === 'Pending' ? 'badge-gold' : 'badge-red';
+    const getName = id => (ten.find(x => x.id === id) || {}).name || id;
+    const getTitle = id => (props.find(x => x.id === id) || {}).title || id;
+
+    document.getElementById('pay-table-body').innerHTML = pays.length
+      ? pays.slice().reverse().map(p => `<tr>
+          <td>${p.id}</td>
+          <td>${getName(p.tenantId)}</td>
+          <td>${getTitle(p.propertyId)}</td>
+          <td>Rs ${Number(p.amount).toLocaleString()}</td>
+          <td>${p.date}</td>
+          <td>${p.method}</td>
+          <td><span class="badge ${badge(p.status)}">${p.status}</span></td>
+        </tr>`).join('')
+      : '<tr><td colspan="7"><div class="empty-state"><div class="icon">💳</div><p>No payments recorded yet.</p></div></td></tr>';
+  }
+
+  initTabs();
+  populate();
+  renderTable();
+
+  document.getElementById('make-pay-btn').addEventListener('click', () => {
+    const id         = document.getElementById('pay-id').value;
+    const tenantId   = document.getElementById('pay-tenant').value;
+    const propertyId = document.getElementById('pay-property').value;
+    const amount     = document.getElementById('pay-amount').value;
+    const date       = document.getElementById('pay-date').value;
+    const method     = document.getElementById('pay-method').value;
+    const status     = document.getElementById('pay-status').value;
+
+    if (!amount || !date) { showToast('Fill all fields.', 'error'); return; }
+
+    const pays = DB.get('payments') || [];
+    pays.push({ id, tenantId, propertyId, amount: +amount, date, method, status });
+    DB.set('payments', pays);
+    showToast('Payment recorded!');
+    document.getElementById('pay-amount').value = '';
+    populate(); renderTable();
+  });
+</script>
+</body>
+</html>
